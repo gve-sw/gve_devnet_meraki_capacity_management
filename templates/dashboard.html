@@ -1,0 +1,110 @@
+<!-- Copyright (c) 2022 Cisco and/or its affiliates.
+This software is licensed to you under the terms of the Cisco Sample
+Code License, Version 1.1 (the "License"). You may obtain a copy of the
+License at
+           https://developer.cisco.com/docs/licenses
+All use of the material herein must be in accordance with the terms of
+the License. All rights not expressly granted by the License are
+reserved. Unless required by applicable law or agreed to separately in
+writing, software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+or implied. -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+
+{% if selected_orga_id == None %}
+<div id="no_devices"> Please choose an organization in the top right corner to proceed.</div>
+{% elif selected_month == 'None' %}
+<div id="no_devices"> Please choose a month in the top right corner to proceed.</div>
+
+{% elif orga_data %}
+
+<!--Data Table-->
+<div class="col-12">
+    <div class="section">
+        <div class="flex-center-vertical">
+            <h1>Montly Switch Port Utilization Report for {{ orga_data.organization_name }} ({{
+                orga_data.organization_id }})</h1>
+        </div>
+        <div class="flex-center-vertical">
+            <h2 class="step-subtext">Last Sync: {{ orga_data.measurement_end_date }} </h2>
+        </div>
+    </div>
+    <div class="section" >
+        <div>Current Port Utilization*: {{ orga_data.current_used_non_uplink_or_stack_port_count }} / {{
+            orga_data.non_uplink_port_count }} ({{ orga_data.overall_port_count }})</div>
+        <div>Current Port Utilization: {{ orga_data.utilization_percent |round(1, 'floor') }} %</div>
+        <div>Max Port Utilization * **: {{ orga_data.max_used_non_uplink_port_count }} / {{
+            orga_data.max_non_uplink_port_count }} ({{ orga_data.max_overall_port_count }})</div>
+        <div>Max Port Utilization **:  {{ orga_data.max_utilization_percent |round(1, 'floor') }} %</div>
+    </div>
+        <div class="section">
+            <div class="responsive-table">
+                <h3>Networks:</h3>
+                <table class="table table--lined table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>ID</th>
+                            <th></th>
+                            <th>Current Port Utilization *:</th>
+                            <th>Current Port Utilization %: </th>
+                            <th></th>
+                            <th>Max Port Utilization * **: </th>
+                            <th>Max Port Utilization % **: </th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for network in orga_data.networks %}
+                        <tr>
+                            <td>
+                                <a
+                                    href="/network_details?orga_id={{orga_data.organization_id}}&month={{selected_month}}&network_id={{network.network_id}}">
+                                    {{ network.network_name }}
+                                </a>
+                            </td>
+                            <td>{{ network.network_id }}</td>
+                            <td>
+                                {% if network.utilization_percent | float < 33.3  %}
+                                    <span class="dot dot-alert-green"></span>
+                                {% elif network.utilization_percent | float < 66.6 %}
+                                    <span class="dot dot-alert-orange"></span>
+                                {% elif network.utilization_percent | float < 100.0 %}
+                                    <span class="dot dot-alert-red"></span>
+                                {% else %}
+                                    <span class="dot dot-alert-grey"></span>
+                                {% endif %}
+                            </td>
+                            <td>{{ network.current_used_non_uplink_or_stack_port_count }} / {{
+                                    network.non_uplink_port_count }} ({{ network.overall_port_count }})</td>
+                            <td>{{ network.utilization_percent |round(1, 'floor') }} %</td>
+                            <td>
+                                {% if network.max_utilization_percent | float < 33.3  %}
+                                    <span class="dot dot-alert-green"></span>
+                                {% elif network.max_utilization_percent | float < 66.6 %}
+                                    <span class="dot dot-alert-orange"></span>
+                                {% elif network.max_utilization_percent | float < 100.0 %}
+                                    <span class="dot dot-alert-red"></span>
+                                {% else %}
+                                    <span class="dot dot-alert-grey"></span>
+                                {% endif %}
+                            </td>
+                            <td>{{ network.max_used_non_uplink_port_count }} / {{
+                                network.max_non_uplink_port_count }} ({{ network.max_overall_port_count }})</td>
+                            <td>{{ network.max_utilization_percent |round(1, 'floor') }} %</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p>*Legend: x/x (x) = (None-Uplink Used / None-Uplink Overall (All Ports Overall)) <br>  ** Ports were not necessarily used at the same time. A port is considered used as soon as it has been used once within 24 hours. </p>
+            </div>
+
+        </div>
+        {% else %}
+        <div id="no_devices">No data for this organization available </div>
+        {% endif %}
+
+        {% endblock %}

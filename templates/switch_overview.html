@@ -1,0 +1,50 @@
+<!-- Copyright (c) 2022 Cisco and/or its affiliates.
+This software is licensed to you under the terms of the Cisco Sample
+Code License, Version 1.1 (the "License"). You may obtain a copy of the
+License at
+           https://developer.cisco.com/docs/licenses
+All use of the material herein must be in accordance with the terms of
+the License. All rights not expressly granted by the License are
+reserved. Unless required by applicable law or agreed to separately in
+writing, software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+or implied. -->
+
+<tr>
+    <td>
+        <a href="/switch_details?orga_id={{orga_id}}&month={{month}}&network_id={{network_id}}&serial={{switch.serial}}">
+            {{ switch.name }}.
+        </a>
+    </td>
+    
+    <td>{{ switch.serial }}</td>
+    <td>{{ switch.claimedAt }}</td>
+    <td>
+        {% if switch.utilization_percent | float < 33.3 %} <span class="dot dot-alert-green">
+            </span>
+            {% elif switch.utilization_percent | float < 66.6 %} <span
+                class="dot dot-alert-orange"></span>
+                {% elif switch.utilization_percent | float < 100.0 %} <span
+                    class="dot dot-alert-red"></span>
+                    {% else %}
+                    <span class="dot dot-alert-grey"></span>
+                    {% endif %}
+    </td>
+    <td>{{ switch.current_used_non_uplink_or_stack_port_count }} / {{
+        switch.non_uplink_port_count }} ({{ switch.overall_port_count }})</td>
+    <td>{{ switch.utilization_percent |round(1, 'floor') }} %</td>
+    <td>
+        {% if switch.max_utilization_percent | float < 33.3 %} <span
+            class="dot dot-alert-green"></span>
+            {% elif switch.max_utilization_percent | float < 66.6 %} <span
+                class="dot dot-alert-orange"></span>
+                {% elif switch.max_utilization_percent | float < 100.0 %} <span
+                    class="dot dot-alert-red"></span>
+                    {% else %}
+                    <span class="dot dot-alert-grey"></span>
+                    {% endif %}
+    </td>
+    <td>{{ switch.max_used_non_uplink_port_count }} / {{
+        switch.max_non_uplink_port_count }} ({{ switch.max_overall_port_count }})</td>
+    <td>{{ switch.max_utilization_percent |round(1, 'floor') }} %</td>
+</tr>

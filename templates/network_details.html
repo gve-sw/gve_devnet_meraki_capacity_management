@@ -1,0 +1,149 @@
+<!-- Copyright (c) 2022 Cisco and/or its affiliates.
+This software is licensed to you under the terms of the Cisco Sample
+Code License, Version 1.1 (the "License"). You may obtain a copy of the
+License at
+           https://developer.cisco.com/docs/licenses
+All use of the material herein must be in accordance with the terms of
+the License. All rights not expressly granted by the License are
+reserved. Unless required by applicable law or agreed to separately in
+writing, software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+or implied. -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Left Rail -->
+    <div class="col-1 sidebar">
+
+        <div id="list">
+            <a class="listitem" href="/?orga_id={{orga_id}}&month={{month}}">
+                <span id="back" class="icon-arrow icon-size-24"></span><span>Back</span>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Right Rail -->
+    {% if network_data %}
+
+    <div class="col-11">
+        <div class="section">
+            <h3>Network Summary for {{ network_data.network_name }} ({{ network_data.network_id }}):</h3>
+            <h4 class="step-subtext">Last Sync: {{ measurement_end_date }} </h2>
+                <div>Current Port Utilization*: {{ network_data.current_used_non_uplink_or_stack_port_count }} / {{
+                    network_data.non_uplink_port_count }} ({{ network_data.overall_port_count }})</div>
+                <div>Current Port Utilization: {{ network_data.utilization_percent |round(1, 'floor') }} %
+                </div>
+                <div>Max Port Utilization * **:  {{ network_data.max_used_non_uplink_port_count }} / {{
+                    network_data.max_non_uplink_port_count }} ({{ network_data.max_overall_port_count }})</div>
+                <div>Max Port Utilization **: {{ network_data.max_utilization_percent |round(1, 'floor') }} %
+                </div>
+        </div>
+
+
+        {% if network_data.non_stack_switches %}
+        <div class="section">
+            <div class="responsive-table">
+                <h3>Switches:</h3>
+                <table class="table table--lined table--selectable table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Serial</th>
+                            <th>Claimed At</th>
+                            <th></th>
+                            <th>Current Port Utilization *: </th>
+                            <th>Current Port Utilization %: </th>
+                            <th></th>
+                            <th>Max Port Utilization *: </th>
+                            <th>Max Port Utilization %: </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for switch in network_data.non_stack_switches %}
+
+                            {% include "switch_overview.html" %}
+
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p>*Legend: x/x (x) = (None-Uplink Used / None-Uplink Overall (All Ports Overall)) <br> ** Ports were not necessarily used at the same time. A port is considered used as soon as it has been used once within 24 hours.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if network_data.stacks %}
+        <div class="section">
+            <div class="responsive-table">
+                <h3>Stacks:</h3>
+                <table class="table table--lined table--selectable table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Serial</th>
+                            <th>Claimed at</th>
+                            <th></th>
+                            <th>Current Port Utilization *: </th>
+                            <th>Current Port Utilization %: </th>
+                            <th></th>
+                            <th>Max Port Utilization *: </th>
+                            <th>Max Port Utilization %:  </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stack in network_data.stacks %}
+                        <tr>
+                            <td style="font-weight:bold;">Stack: {{ stack.name }}</td>
+                            <td>{{ stack.serial }}</td>
+                            <td></td>
+                            <td>{% if stack.utilization_percent | float < 33.3 %} <span class="dot dot-alert-green">
+                                    </span>
+                                    {% elif stack.utilization_percent | float < 66.6 %} <span
+                                        class="dot dot-alert-orange"></span>
+                                        {% elif stack.utilization_percent | float < 100.0 %} <span
+                                            class="dot dot-alert-red"></span>
+                                            {% else %}
+                                            <span class="dot dot-alert-grey"></span>
+                                            {% endif %}
+                            </td>
+                            <td>{{ stack.current_used_non_uplink_or_stack_port_count }} / {{
+                                stack.non_uplink_port_count }} ({{ stack.overall_port_count }}) </td>
+                            <td>{{ stack.utilization_percent |round(1, 'floor') }} %</td>
+                            <td>
+                                {% if stack.max_utilization_percent | float < 33.3 %} <span class="dot dot-alert-green">
+                                    </span>
+                                    {% elif stack.max_utilization_percent | float < 66.6 %} <span
+                                        class="dot dot-alert-orange"></span>
+                                        {% elif stack.max_utilization_percent | float < 100.0 %} <span
+                                            class="dot dot-alert-red"></span>
+                                            {% else %}
+                                            <span class="dot dot-alert-grey"></span>
+                                            {% endif %}
+                            </td>
+                            <td>{{ stack.max_used_non_uplink_port_count }} / {{
+                                stack.max_non_uplink_port_count }} ({{ stack.max_overall_port_count }})</td>
+                            <td>{{ stack.max_utilization_percent |round(1, 'floor') }} %</td>
+                        </tr>
+                        {% for switch in stack.switches %}
+                            {% include "switch_overview.html" %}
+                        {% endfor %}
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p>*Legend: x/x (x) = (None-Uplink Used / None-Uplink Overall (All Ports Overall)) <br> ** Ports were not necessarily used at the same time. A port is considered used as soon as it has been used once within 24 hours.
+        </p>
+        {% endif %}
+        {% else %}
+        <div id="no_devices" style="margin-left:200px;">No data available</div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

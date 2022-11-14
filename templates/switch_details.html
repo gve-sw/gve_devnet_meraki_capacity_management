@@ -1,0 +1,157 @@
+<!-- Copyright (c) 2022 Cisco and/or its affiliates.
+This software is licensed to you under the terms of the Cisco Sample
+Code License, Version 1.1 (the "License"). You may obtain a copy of the
+License at
+           https://developer.cisco.com/docs/licenses
+All use of the material herein must be in accordance with the terms of
+the License. All rights not expressly granted by the License are
+reserved. Unless required by applicable law or agreed to separately in
+writing, software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+or implied. -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="modal modal--small hide" id="modal-small">
+    <div class="modal__dialog">
+        <div class="modal__content">
+            <a class="modal__close" onclick="closeModal('modal-small')"><span class="icon-close"></span></a>
+            <div class="modal__header">
+                <div id="title" class="modal__title">Port History</div>
+            </div>
+            <div class="modal__body">
+               <p id="content" class="subtitle"></p>
+            </div>
+            <div class="modal__footer">
+                <button class="btn" onclick="closeModal('modal-small')">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    
+    <!-- Left Rail -->
+    <div class="col-1 sidebar">
+
+        <div id="list">
+            <a class="listitem" href="/network_details?orga_id={{orga_id}}&month={{month}}&network_id={{network_id}}">
+                <span id="back" class="icon-arrow icon-size-24"></span><span>Back</span>
+            </a>
+        </div>
+
+    </div>
+   
+                                    
+
+    <!-- Right Rail -->
+    {% if switch_data %}
+        <div class="col-11">
+            <div class="section">
+                <h3 id="serial_title">Switch Summary for {{ switch_data.name }} ({{ switch_data.serial }}):</h3>
+                <h4 class="step-subtext">Last Sync: {{ measurement_end_date }} </h2>
+                <div> Switch Claimed At: {{ switch_data.claimedAt }}</div>
+                <div>Current Port Utilization *: {{ switch_data.current_used_non_uplink_or_stack_port_count }} / {{
+                    switch_data.non_uplink_port_count }} ({{ switch_data.overall_port_count }})</div>
+                <div>Current Port Utilization: {{ switch_data.utilization_percent |round(1, 'floor') }} %</div>
+                <div>Max Port Utilization * **: {{ switch_data.max_used_non_uplink_port_count }} / {{
+                    switch_data.max_non_uplink_port_count }} ({{ switch_data.max_overall_port_count }})</div>
+                <div>Max Port Utilization **: {{ switch_data.max_utilization_percent |round(1, 'floor') }} %</div>
+        </div>
+
+        {% if switch_data.ports %}
+            <div class="section">
+                <div class="responsive-table">
+                    <h3>Ports:</h3>
+                    <table class="table table--lined table--selectable table">
+                        <thead>
+                            <tr>
+                                <th>Port ID</th>
+                                <th>Status</th>
+                                <th>Enabled</th>
+                                <th>Tagged Uplink</th>
+                                <th>Speed</th>
+                                <th>Type</th>
+                                <th>Vlan</th>
+                                <th>Traffic of 24 h in Kbps (total/received/send)</th>
+                                <th>Usage of 24h in Kb (total/received/send)</th>
+                                <th>Used in last 24h</th>
+                                <th>Last Used within 24 h</th>
+                                <th>Usage History</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for port in switch_data.ports %}
+                            <tr>
+                                <td>{{ port.portId }}</td>
+                                <td>
+                                    {% if port.status == 'Connected'%}
+                                        <span class="dot dot-alert-green">{{ port.status }}</span>
+                                    {% elif port.status == 'Disconnected'%}
+                                        <span class="dot dot-alert-red">{{ port.status }}</span>
+                                    {% else %}
+                                        <span class="dot dot-alert-grey">{{ port.status }}</span>
+                                    {% endif %}
+                                    </td>
+                                <td>{{ port.enabled }}</td>
+                                <td>{{ port.taggedUplink }}</td>
+                                <td>{{ port.speed }}</td>
+                                <td>{{ port.type }}</td>
+                                <td>
+                                    {% if port.type == 'access' %}
+                                        {% if port.voiceVlan != None %}
+                                            {{ port.voiceVlan }} (Voice),
+                                        {% endif %}
+                                     {{ port.vlan }}
+                                    {% elif port.type == 'trunk' %}
+                                        {% if port.vlan != None %}
+                                            {{ port.vlan }} (Native),
+                                        {% endif %}
+                                        {{ port.allowedVlans }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ port.trafficInKbps.total }} / {{ port.trafficInKbps.recv  }} / {{ port.trafficInKbps.sent  }} </td>
+                                <td>{{ port.usageInKb.total }} / {{ port.usageInKb.recv  }} / {{ port.usageInKb.sent  }}</td>
+                                <td>{% if port.used_within_1_day %}
+                                            <span class="dot dot-alert-green">{{ port.used_within_1_day }}</span>
+                                            {% else %}
+                                            <span class="dot dot-alert-red">{{ port.used_within_1_day }}</span>
+                                            {% endif %}
+                                            </td>
+                                <td>{{ port.last_used_date }}</td>
+                                <td><button class="btn" data-portId={{ port.portId }} data-history="{{ port.usage_history }}" onclick="adaptAndShowModal(this);">Usage History</button></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <p>*Legend: x/x (x) = (None-Uplink Used / None-Uplink Overall (All Ports Overall)) <br> ** Ports were not necessarily used at the same time. A port is considered used as soon as it has been used once within 24 hours.
+            </p>
+        {% else %}
+            <div id="no_devices" style="margin-left:200px;">No port data for available </div>
+        {% endif %}
+
+    {% else %}
+        <div id="no_devices" style="margin-left:200px;">No switch data available </div>
+    {% endif %}
+
+</div>
+</div>
+
+<script>
+function adaptAndShowModal(el){
+    var history = $(el).attr('data-history');
+    var history = history.replaceAll('{','').replaceAll("'","").replaceAll('}','').replaceAll(',', ' </br>').replaceAll('True', 'Used').replaceAll('False', 'Not Used');
+    $(content).html(history);
+
+    var port_id = $(el).attr('data-portId');
+    $(title).html('Port History for Port: ' + port_id);
+
+    openModal('modal-small');
+    }
+
+</script>
+
+{% endblock %}
